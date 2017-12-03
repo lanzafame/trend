@@ -66,9 +66,9 @@ func GetNewTick(crypto, exchange string) (Ticker, error) {
 func GetNewTicks(exchange string) ([]Ticker, error) {
 	var url string
 	if exchange == "" {
-		url = "https://api.coinmarketcap.com/v1/ticker/?limit=0"
+		url = "https://api.coinmarketcap.com/v1/ticker/"
 	} else {
-		url = fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/?limit=0&convert=%s", exchange)
+		url = fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/?convert=%s", exchange)
 	}
 	resp, err := http.Get(url)
 	if err != nil {
@@ -107,7 +107,7 @@ func (t *Ticker) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (t *Ticker) MarshalInfluxdbLineProto(exchange string) (models.Point, error) {
+func (t *Ticker) MarshalInfluxdbLineProto(exchange string) models.Point {
 	// create measurement name (string)
 	name := t.ID
 	// create tags
@@ -142,12 +142,10 @@ func (t *Ticker) MarshalInfluxdbLineProto(exchange string) (models.Point, error)
 	}
 
 	// create point
-	point, err := models.NewPoint(name, tags, fields, t.LastUpdated)
-	if err != nil {
-		return nil, err
-	}
+	// ignoring error because NewPoint returns missing fields for zero values
+	point, _ := models.NewPoint(name, tags, fields, t.LastUpdated)
 
-	return point, nil
+	return point
 }
 
 // Price is a hacky way to deal with variable price currencies.

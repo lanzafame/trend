@@ -64,27 +64,23 @@ func main() {
 	go func() {
 		for {
 			select {
-			case <-ticker.C:
+			case t := <-ticks:
 				// Create a new point batch
 				bp, err := client.NewBatchPoints(bpconf)
 				if err != nil {
 					log.Fatal(err)
 				}
-				for t := range ticks {
-					if t == (trend.Ticker{}) {
-						break
-					}
-					pt, err := t.MarshalInfluxdbLineProto(*convert)
-					if err != nil {
-						log.Fatal(err)
-					}
-					bp.AddPoint(client.NewPointFrom(pt))
-				}
+
+				pt := t.MarshalInfluxdbLineProto(*convert)
+
+				bp.AddPoint(client.NewPointFrom(pt))
+
 				err = c.Write(bp)
 				if err != nil {
-					log.Fatal(err)
+					log.Printf("write: %v", err)
+				} else {
+					logs <- "wrote to influx\n"
 				}
-				logs <- "wrote to influx\n"
 			case <-quit:
 				done <- struct{}{}
 			}
@@ -128,7 +124,6 @@ func collectAllCryptos(convert string, ticker *time.Ticker, ticks chan trend.Tic
 			for _, t := range ts {
 				ticks <- t
 			}
-			ticks <- trend.Ticker{}
 		case <-quit:
 			ticker.Stop()
 			return
