@@ -66,9 +66,9 @@ func GetNewTick(crypto, exchange string) (Ticker, error) {
 func GetNewTicks(exchange string) ([]Ticker, error) {
 	var url string
 	if exchange == "" {
-		url = "https://api.coinmarketcap.com/v1/ticker/"
+		url = "https://api.coinmarketcap.com/v1/ticker/?limit=0"
 	} else {
-		url = fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/?convert=%s", exchange)
+		url = fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/?limit=0&convert=%s", exchange)
 	}
 	resp, err := http.Get(url)
 	if err != nil {
@@ -140,6 +140,10 @@ func (t *Ticker) MarshalInfluxdbLineProto(exchange string) models.Point {
 			fields[k] = v
 		}
 	}
+
+	fields["available_supply"] = t.AvailableSupply
+	fields["total_supply"] = t.TotalSupply
+	fields["max_supply"] = t.MaxSupply
 
 	// create point
 	// ignoring error because NewPoint returns missing fields for zero values
